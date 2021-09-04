@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\PassportAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use \App\Http\Controllers\RegisterController;
@@ -19,4 +20,10 @@ use \App\Http\Controllers\RegisterController;
 //    return $request->user();
 //});
 
-Route::post('register',[RegisterController::class,'register']);
+//Route::post('register',[RegisterController::class,'register']);
+Route::post('register', [PassportAuthController::class, 'register']);
+Route::post('login', [PassportAuthController::class,'login']);
+
+Route::middleware('auth:api')->group(function() {
+    Route::get('user', [PassportAuthController::class, 'userInfo']);
+});
