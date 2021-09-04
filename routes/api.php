@@ -26,4 +26,5 @@ Route::post('login', [PassportAuthController::class,'login']);
 
 Route::middleware('auth:api')->group(function() {
     Route::get('user', [PassportAuthController::class, 'userInfo']);
+    Route::delete('logout',[PassportAuthController::class, 'logout']);
 });
