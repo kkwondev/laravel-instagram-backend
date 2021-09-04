@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PassportAuthController extends Controller
 {
@@ -23,9 +25,8 @@ class PassportAuthController extends Controller
             'password' => bcrypt($request->password)
         ]);
 
-        $token = $user->createToken('Laravel8PassportAuth')->accessToken;
 
-        return response()->json(['token' => $token], 200);
+        return response()->json(['data' => $user], 200);
     }
 
     public function login(Request $request)
@@ -35,12 +36,43 @@ class PassportAuthController extends Controller
             'password'=>$request->password
         ];
         if(auth()->attempt($data)) {
-            $token = auth()->user()->createToken('Laravel8PassportAuth')->accessToken;
-            return response()->json(['token'=>$token],200);
+            $tokenRequestResult = $this->newToken($data['user_id'],$data['password']);
+            return response()->json(
+                [
+                    'access_token' =>$tokenRequestResult->access_token,
+                    'refresh_token'=>$tokenRequestResult->refresh_token
+                ]
+                ,200);
         } else {
-            return response()->json(['error'=>'Unauthorid'],401);
+            return response()->json(['error'=>'인증오류'],401);
         }
     }
+
+
+    public function newToken(String $user_id, String $password) : object
+    {
+        $client = DB::table('oauth_clients')->where('id', 2)->first();
+
+        $payloadObject = [
+            'grant_type' => 'password',
+            'client_id' => $client->id,
+            'client_secret' => $client->secret,
+            'username' => $user_id,
+            'password' => $password,
+            'scope' => '',
+        ];
+
+
+        $tokenRequest = Request::create('/oauth/token', 'POST', $payloadObject);
+        $tokenRequestResult = json_decode(app()->handle($tokenRequest)->getContent());
+
+        if(isset($tokenRequestResult->message) && $tokenRequestResult->message) {
+            return response()->json(['error'=>$tokenRequestResult->message],500);
+        }
+
+        return $tokenRequestResult;
+    }
+
     public function userInfo()
     {
 
